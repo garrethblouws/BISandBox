@@ -1,0 +1,27 @@
+=IF([Interaction Type] <> "SUCCESS", "NOCONTACT","SUCCESS")
+=WEEKNUM(vw_careinteraction[Inserted On])
+FORMAT(vw_careinteraction[Inserted On],"DDDD")
+=CONCATENATE(HOUR(vw_careinteraction[Inserted On]), ":00")
+
+
+Volume:=CALCULATE(COUNTX(Careinteractions,[Consultant No]))
+
+Total %:=DIVIDE([Volume  ],
+                  CALCULATE([Volume  ],
+                       ALL(Careinteractions[Interaction Type])),0)
+					   
+					   
+yesanswer:=CALCULATE([Volume  ],
+                              FILTER(questionanswer,
+                              questionanswer[answer] =TRUE()))
+
+noanswer:=CALCULATE([Volume  ],
+                              FILTER(questionanswer,
+                              questionanswer[answer] =FALSE()))
+
+crossfiltervolume:=CALCULATE( [Volume  ], CROSSFILTER(questionanswer[consultantcode],Consultants[conscode],both))
+
+
+Difference:=[crossfiltervolume]-([yesanswer]+[noanswer])
+
+crossfilterreason:=CALCULATE( [Volume  ], CROSSFILTER(consreasonanswer[consno],Consultants[consno],both))							  
