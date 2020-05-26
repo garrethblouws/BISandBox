@@ -1,0 +1,93 @@
+---Question 1
+
+select 
+      prd.productvendor,
+      count(prd.productcode) as Products_Supplied,
+	  CONCAT(minvalue," - ",maxedvalue) as PriceRange
+from products prd
+Inner Join (select productvendor,
+			Min(buyprice) as minvalue,
+			MAX(buyprice) as maxedvalue
+			from products
+			Group by productvendor) rag ON rag.productvendor = 	prd.productvendor		 
+group by prd.productvendor
+order by count(prd.productcode) desc
+
+---Question 2
+
+select cst.customernumber,
+       cst.CustomerName,
+	   sum(amount) as amount
+from customers cst
+Join payments pym ON cst.CustomerNumber = pym.CustomerNumber
+group by cst.customernumber,
+         cst.customername
+Order by sum(amount) desc
+
+--Question 3
+
+select lastname,firstname
+from employees
+UNION ALL
+select contactLastName,contactFirstName
+from customers
+order by lastname
+
+---Question 4
+
+select cus.contactFirstName,cus.contactlastname 
+from customers cus
+join (select contactlastname
+                  from customers
+					group by contactlastname
+					having count(contactlastname) > 1
+					order by contactlastname) sur ON cus.contactlastname = sur.contactlastname
+order by cus.contactlastname,cus.contactFirstName
+
+---Question 5
+
+select t.productcode,
+       CONCAT(FORMAT(max(t.Percentage),0),'%') as Profit_Margin
+from (select productCode,
+	   sum((MSRP-buyPrice)/MSRP * 100) as Percentage
+       from products
+       group by productCode)t
+	   
+--Question 6
+
+select cus.customerNumber,
+       cus.CustomerName,
+       ord.orderNumber,
+       case when status != 'Shipped' then 'Not Shipped' else status end as Order_Status
+from orders ord
+Join customers cus on cus.customerNumber = ord.CustomerNumber
+order by cus.customerNumber
+
+
+--Question 7
+
+select cus.customerNumber,
+       cus.CustomerName,
+	   pyt.amount,
+	   emp.firstName,
+	   emp.lastName,
+	   emp.extension
+from customers cus
+Join orders ord on cus.customerNumber = ord.CustomerNumber
+join ( select orderdate,
+	          DATE_ADD(orderdate, INTERVAL 2 MONTH) as Grace_Period
+	      from orders
+	     group by orderdate 
+      ) ord1 on ord1.orderdate = ord.orderdate
+Join ( 	select	ordernumber,
+  			sum(quantityOrdered * priceEach) as amount
+           from orderdetails
+	 		group by ordernumber) odd on odd.ordernumber = ord.ordernumber
+Join payments pyt on pyt.paymentdate >= ord1.Grace_Period 
+                   and  odd.amount = pyt.amount
+Join employees emp on emp.employeeNumber = cus.salesRepEmployeeNumber				   
+Group by cus.customerNumber,
+		 ord.orderdate,
+         pyt.paymentdate,
+		 pyt.amount   
+
